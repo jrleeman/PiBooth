@@ -51,7 +51,7 @@ def doCountdown(pretext="Ready", pretext_fontsize = 600, countfrom=5):
 def takePhoto():
     camera.brightness = photoBrightness
     time_stamp = strftime("%Y_%m_%dT%H_%M_%S", gmtime())
-    camera.capture("/home/pi/photobooth_photos/%s.jpg" %time_stamp)
+    camera.capture("/home/pi/photobooth_photos/%s.jpg" %time_stamp, use_video_port=True)
     camera.brightness = previewBrightness
 
 def outputToggle(pin, status, time=False):
