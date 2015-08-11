@@ -1,11 +1,14 @@
-import sys, pygame
+import sys
+import pygame
 import picamera
 import RPi.GPIO as GPIO
-from time import sleep,strftime,gmtime
+from time import sleep, strftime, gmtime
 import os
 
-def drawText(font, textstr, clear_screen=True, color=(250,10,10)):
-    if clear_screen: screen.fill(black) # black screen
+
+def drawText(font, textstr, clear_screen=True, color=(250, 10, 10)):
+    if clear_screen:
+        screen.fill(black)  # black screen
 
     # Render font
     pltText = font.render(textstr, 1, color)
@@ -21,38 +24,44 @@ def drawText(font, textstr, clear_screen=True, color=(250,10,10)):
     # Update
     pygame.display.update()
 
+
 def clearScreen():
     screen.fill(black)
     pygame.display.update()
 
-def doCountdown(pretext="Ready", pretext_fontsize = 600, countfrom=5):
-    pretext_font = pygame.font.Font(None,pretext_fontsize)
+
+def doCountdown(pretext="Ready", pretext_fontsize=600, countfrom=5):
+    pretext_font = pygame.font.Font(None, pretext_fontsize)
     drawText(pretext_font, pretext)
     sleep(1)
     clearScreen()
 
     # Count down on the display from 5 to 1
-    for i in range(countfrom,0,-1):
+    for i in range(countfrom, 0, -1):
         print "Countdown: ", i
         drawText(bigfont, str(i))
-        outputToggle(ledPin,False,time=0.125)
-        outputToggle(ledPin,True,time=0.125)
-        outputToggle(ledPin,False,time=0.125)
-        outputToggle(ledPin,True,time=0.125)
-        outputToggle(ledPin,False,time=0.125)
-        outputToggle(ledPin,True,time=0.125)
-        outputToggle(ledPin,False,time=0.125)
-        outputToggle(ledPin,True,time=0.125)
-
+        outputToggle(ledPin, False, time=0.125)
+        outputToggle(ledPin, True, time=0.125)
+        outputToggle(ledPin, False, time=0.125)
+        outputToggle(ledPin, True, time=0.125)
+        outputToggle(ledPin, False, time=0.125)
+        outputToggle(ledPin, True, time=0.125)
+        outputToggle(ledPin, False, time=0.125)
+        outputToggle(ledPin, True, time=0.125)
 
     # Clear the screen one final time so no numbers are left
     clearScreen()
 
+
 def takePhoto():
     camera.brightness = photoBrightness
     time_stamp = strftime("%Y_%m_%dT%H_%M_%S", gmtime())
-    camera.capture("/home/pi/photobooth_photos/%s.jpg" %time_stamp, use_video_port=True)
+    camera.capture("/home/pi/photobooth_photos/%s.jpg" % time_stamp)
     camera.brightness = previewBrightness
+    # Can add use_video_port=True to the capture call, which does prevent
+    # the preview from not matching the captured size. This seemed to
+    # signifcantly degrade the capture quality though, so I let it be.
+
 
 def outputToggle(pin, status, time=False):
     GPIO.output(pin, status)
@@ -60,7 +69,12 @@ def outputToggle(pin, status, time=False):
         sleep(time)
     return status
 
+
 def photoButtonPress(event):
+    sleep(0.1)
+    if GPIO.input(photobuttonPin) != GPIO.LOW:
+        print "Photo button pin status was: ", GPIO.input(photobuttonPin)
+        return
     sleep(1)
     outputToggle(auxlightPin, True)
     sleep(2)
@@ -75,14 +89,20 @@ def photoButtonPress(event):
     sleep(1)
     outputToggle(auxlightPin, False)
 
+
 def shutdownPi():
-	# shutdown our Raspberry Pi
-	os.system("sudo shutdown -h now")
+    # shutdown our Raspberry Pi
+    os.system("sudo shutdown -h now")
+
 
 def shutdownButtonPress(event):
+    sleep(3)
+    if GPIO.input(shutdownbuttonPin) != GPIO.LOW:
+        return
     print "Shutdown button detected!"
     safeClose()
     shutdownPi()
+
 
 def safeClose():
     print "Doing safe close-out"
@@ -93,16 +113,20 @@ def safeClose():
     GPIO.cleanup()
 
 # Initial Setup
+
+if not os.path.exists('/home/pi/photobooth_photos'):
+    os.makedirs('/home/pi/photobooth_photos')
+
 pygame.init()
 
 # Constants
-ledPin = 19 # GPIO of the indicator LED
-auxlightPin = 20 # GPIO of the AUX lighting output
-photobuttonPin = 17 # GPIO of the photo push button
-shutdownbuttonPin = 18 # GPIO of the shutdown push button
-previewBrightness = 60 # Lighter than normal to offset the alpha distortion
-photoBrightness = 57 # Darker than preview since there is no alpha
-photoContrast = 0 # Default
+ledPin = 19  # GPIO of the indicator LED
+auxlightPin = 20  # GPIO of the AUX lighting output
+photobuttonPin = 17  # GPIO of the photo push button
+shutdownbuttonPin = 18  # GPIO of the shutdown push button
+previewBrightness = 60  # Lighter than normal to offset the alpha distortion
+photoBrightness = 57  # Darker than preview since there is no alpha
+photoContrast = 0  # Default
 
 size = width, height = 1280, 720
 black = 0, 0, 0
@@ -114,9 +138,11 @@ tinyfont = pygame.font.Font(None, 300)
 
 # Setup camera
 camera = picamera.PiCamera()
-camera.resolution = (1280,720)
-camera.brightness = previewBrightness # Turned up so the black isn't too dark
-camera.preview_alpha = 200 # Set transparency so we can see the countdown
+camera.resulotion = (2592, 1944)  # 1280,720 also works for some setups
+camera.framerate = 10  # slower is necessary for high-resolution
+camera.brightness = previewBrightness  # Turned up so the black isn't too dark
+camera.preview_alpha = 210  # Set transparency so we can see the countdown
+camera.hflip = True
 camera.start_preview()
 
 # Fill screen
@@ -127,14 +153,16 @@ pygame.mouse.set_visible(False)
 
 # Setup and tie GPIO pins
 GPIO.setmode(GPIO.BCM)
-GPIO.setup(photobuttonPin, GPIO.IN, GPIO.PUD_UP) # Take photo button
-GPIO.setup(shutdownbuttonPin, GPIO.IN, GPIO.PUD_UP) # Shutdown button
-GPIO.setup(ledPin, GPIO.OUT) # Front LED
-GPIO.setup(auxlightPin, GPIO.OUT) # Aux Lights
-GPIO.add_event_detect(photobuttonPin, GPIO.FALLING, callback=photoButtonPress, bouncetime=1000)
-GPIO.add_event_detect(shutdownbuttonPin, GPIO.FALLING, callback=shutdownButtonPress, bouncetime=1000)
+GPIO.setup(photobuttonPin, GPIO.IN, GPIO.PUD_UP)  # Take photo button
+GPIO.setup(shutdownbuttonPin, GPIO.IN, GPIO.PUD_UP)  # Shutdown button
+GPIO.setup(ledPin, GPIO.OUT)  # Front LED
+GPIO.setup(auxlightPin, GPIO.OUT)  # Aux Lights
+GPIO.add_event_detect(photobuttonPin, GPIO.FALLING,
+                      callback=photoButtonPress, bouncetime=1000)
+GPIO.add_event_detect(shutdownbuttonPin, GPIO.FALLING,
+                      callback=shutdownButtonPress, bouncetime=1000)
 
-outputToggle(ledPin,True) # Turn on the camera "power" LED
+outputToggle(ledPin, True)  # Turn on the camera "power" LED
 
 # Main loop... just waiting
 while 1:
@@ -155,22 +183,24 @@ while 1:
                 photoBrightness += 1
                 previewBrightness += 1
                 camera.brightness = previewBrightness
-                print "New brightness (preview/photo): %d/%d" %(photoBrightness,previewBrightness)
+                print "New brightness (preview/photo): %d/%d" % (
+                        photoBrightness, previewBrightness)
             if event.key == pygame.K_DOWN:
                 photoBrightness -= 1
                 previewBrightness -= 1
                 camera.brightness = previewBrightness
-                print "New brightness (preview/photo): %d/%d" %(photoBrightness,previewBrightness)
+                print "New brightness (preview/photo): %d/%d" % (
+                        photoBrightness, previewBrightness)
 
             # Adjust contrast with the right and left arrows
             if event.key == pygame.K_RIGHT:
                 photoContrast += 1
                 camera.contrast = photoContrast
-                print "New contrast: %d" %(photoContrast)
+                print "New contrast: %d" % (photoContrast)
             if event.key == pygame.K_LEFT:
                 photoContrast -= 1
                 camera.contrast = photoContrast
-                print "New contrast: %d" %(photoContrast)
+                print "New contrast: %d" % (photoContrast)
 
         else:
             pass
