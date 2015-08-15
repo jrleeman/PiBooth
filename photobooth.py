@@ -58,6 +58,8 @@ def takePhoto():
     time_stamp = strftime("%Y_%m_%dT%H_%M_%S", gmtime())
     camera.capture("/home/pi/photobooth_photos/%s.jpg" % time_stamp)
     camera.brightness = previewBrightness
+
+    return "/home/pi/photobooth_photos/%s.jpg" % time_stamp
     # Can add use_video_port=True to the capture call, which does prevent
     # the preview from not matching the captured size. This seemed to
     # signifcantly degrade the capture quality though, so I let it be.
@@ -75,20 +77,35 @@ def photoButtonPress(event):
     if GPIO.input(photobuttonPin) != GPIO.LOW:
         print "Photo button pin status was: ", GPIO.input(photobuttonPin)
         return
+
     sleep(1)
     outputToggle(auxlightPin, True)
     sleep(2)
     doCountdown()
-    takePhoto()
+    fname1 = takePhoto()
     sleep(1)
     doCountdown()
-    takePhoto()
+    fname2 = takePhoto()
     sleep(1)
     doCountdown(pretext="One More", pretext_fontsize=400)
-    takePhoto()
+    fname3 = takePhoto()
     sleep(1)
     outputToggle(auxlightPin, False)
 
+    if tweet_photos:
+        tweetPhotos([fname1, fname2, fname3])
+
+
+def tweetPhotos(photo_files):
+    responses = []
+    media_ids = []
+    tweet_text = "Test photobooth tweet with pictures!"
+    for photo_file in photo_files:
+        photo = open(photo_file)
+        response = twitter.upload_media(media=photo)
+        responses.apppend(response)
+        media_ids.append(response['media_id'])
+    twitter.update_status(status=tweet_text, media_ids=media_ids)
 
 def shutdownPi():
     # shutdown our Raspberry Pi
@@ -112,10 +129,28 @@ def safeClose():
     camera.close()
     GPIO.cleanup()
 
+# Setup Parameters
+tweet_photos = True
+photo_path = '/home/pi/photobooth_photos'
 # Initial Setup
 
-if not os.path.exists('/home/pi/photobooth_photos'):
-    os.makedirs('/home/pi/photobooth_photos')
+if not os.path.exists(photo_path):
+    os.makedirs(photo_path)
+
+if tweet_photos:
+    import twython
+
+    CONSUMER_KEY = "1fXopQ2aU1b4v9D6ufdJXmAZf"
+    CONSUMER_SECRET = "16IfaC1dEEQhNKlERU7ggE2GU2id09zVVEsLfgexf7Qa8lPsHb"
+    ACCESS_TOKEN = "145877180-AHXpU20eA5ofrARcA6FuWMpF1shHlR8iVhLrpFLK"
+    ACCESS_TOKEN_SECRET = "jGWBAZ7pI2nnObmFwvFCvIzywPEe0riD1LRPoZ4PjOHfU"
+
+    twitter = twython.Twython(
+      CONSUMER_KEY,
+      CONSUMER_SECRET,
+      ACCESS_TOKEN,
+      ACCESS_TOKEN_SECRET
+    )
 
 pygame.init()
 
