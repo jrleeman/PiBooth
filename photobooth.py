@@ -103,7 +103,7 @@ def tweetPhotos(photo_files):
     for photo_file in photo_files:
         photo = open(photo_file)
         response = twitter.upload_media(media=photo)
-        responses.apppend(response)
+        responses.append(response)
         media_ids.append(response['media_id'])
     twitter.update_status(status=tweet_text, media_ids=media_ids)
 
