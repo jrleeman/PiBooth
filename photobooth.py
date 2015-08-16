@@ -7,6 +7,24 @@ import os
 
 
 def drawText(font, textstr, clear_screen=True, color=(250, 10, 10)):
+    """
+    Draws the given string onto the pygame screen.
+
+    Parameters:
+    -----------
+    font : object
+        pygame font object
+    textstr: string
+        text to be written to the screen
+    clean_screan : boolean
+        determines if previously shown text should be cleared
+    color : tuple
+        RGB tuple of font color
+
+    Returns:
+    --------
+    None
+    """
     if clear_screen:
         screen.fill(black)  # black screen
 
@@ -26,46 +44,100 @@ def drawText(font, textstr, clear_screen=True, color=(250, 10, 10)):
 
 
 def clearScreen():
+    """
+    Clears the pygame screen of all drawn objects.
+
+    Parameters:
+    -----------
+    None
+
+    Returns:
+    --------
+    None
+    """
     screen.fill(black)
     pygame.display.update()
 
 
 def doCountdown(pretext="Ready", pretext_fontsize=600, countfrom=5):
+    """
+    Performs on screen countdown
+
+    Parameters:
+    -----------
+    pretext : string
+        Text shown before countdown starts
+    pretext_fontsize : int
+        Size of pretext font
+    countfrom : int
+        Number to count down from
+    """
     pretext_font = pygame.font.Font(None, pretext_fontsize)
     drawText(pretext_font, pretext)
     sleep(1)
     clearScreen()
 
-    # Count down on the display from 5 to 1
+    # Count down on the display
     for i in range(countfrom, 0, -1):
-        print "Countdown: ", i
+        # Draw text on the screen
         drawText(bigfont, str(i))
-        outputToggle(ledPin, False, time=0.125)
-        outputToggle(ledPin, True, time=0.125)
-        outputToggle(ledPin, False, time=0.125)
-        outputToggle(ledPin, True, time=0.125)
-        outputToggle(ledPin, False, time=0.125)
-        outputToggle(ledPin, True, time=0.125)
-        outputToggle(ledPin, False, time=0.125)
-        outputToggle(ledPin, True, time=0.125)
+
+        # Flash the LED during the second of dead time
+        for j in range(4):
+            outputToggle(ledPin, False, time=0.125)
+            outputToggle(ledPin, True, time=0.125)
 
     # Clear the screen one final time so no numbers are left
     clearScreen()
 
 
 def takePhoto():
+    """
+    Captures and stores a photo from the pi camera board
+
+    Paramters:
+    ----------
+    None
+
+    Returns:
+    --------
+    path : str
+        path, including filename, of captured photo
+
+    Notes:
+    ------
+    Can add use_video_port=True to the capture call, which does prevent
+    the preview from not matching the captured size. This seemed to
+    signifcantly degrade the capture quality though, so I let it be.
+    Photos can be trimmed after the fact, or just left as is.
+    """
+    # Adjust to image capture brightness
     camera.brightness = photoBrightness
+
+    # Grab the capture
     time_stamp = strftime("%Y_%m_%dT%H_%M_%S", gmtime())
-    camera.capture("/home/pi/photobooth_photos/%s.jpg" % time_stamp)
+    path = "/home/pi/photobooth_photos/%s.jpg" % time_stamp
+    camera.capture(path)
+
+    # Go back to preview brightness
     camera.brightness = previewBrightness
 
-    return "/home/pi/photobooth_photos/%s.jpg" % time_stamp
-    # Can add use_video_port=True to the capture call, which does prevent
-    # the preview from not matching the captured size. This seemed to
-    # signifcantly degrade the capture quality though, so I let it be.
+    return path
 
 
 def outputToggle(pin, status, time=False):
+    """
+    Changes the state of an ouput GPIO pin with optional time delay.
+
+    Parameters:
+    -----------
+    pin : int
+        Pin number to manipulate
+    status : boolean
+        Status to be assigned to the pin
+    time : int, float
+        Time to wait before returning (optional)
+    """
     GPIO.output(pin, status)
     if time:
         sleep(time)
@@ -73,33 +145,94 @@ def outputToggle(pin, status, time=False):
 
 
 def photoButtonPress(event):
+    """
+    Event handler for the big red photo button.
+
+    Parameters:
+    -----------
+    event : object
+        Button press event from GPIO
+
+    Returns:
+    --------
+    None
+    """
+    # Wait for 0.1 sec to be sure it's a person pressing the
+    # button, not noise.
     sleep(0.1)
     if GPIO.input(photobuttonPin) != GPIO.LOW:
-        print "Photo button pin status was: ", GPIO.input(photobuttonPin)
         return
 
+    # Turn on the lights and let people adjust
     sleep(1)
     outputToggle(auxlightPin, True)
     sleep(2)
-    doCountdown()
-    fname1 = takePhoto()
-    sleep(1)
-    doCountdown()
-    fname2 = takePhoto()
-    sleep(1)
-    doCountdown(pretext="One More", pretext_fontsize=400)
-    fname3 = takePhoto()
-    sleep(1)
+
+    # Take photos
+    photo_names = []
+    for i in range(number_photos):
+        doCountdown()
+        fname = takePhoto()
+        photo_names.append(fname)
+        sleep(1)
+
+    # Turn off the lights
     outputToggle(auxlightPin, False)
 
+    # Tweet the photos
     if tweet_photos:
-        tweetPhotos([fname1, fname2, fname3])
+        if ".txt" in tweet_text:
+            text = getRandomTweet(tweet_text)
+        else:
+            text = tweet_text
+        tweetPhotos(photo_names, tweet_text=tweet_text)
 
 
-def tweetPhotos(photo_files):
+def getRandomTweet(fname):
+        """
+        Gets a random line from a file of possible tweets to go with
+        photo posts to Twitter.
+
+        Parameters:
+        -----------
+        fname : str
+            filename
+
+        Returns:
+        --------
+        tweet : str
+            text of random tweet from file
+        """
+        lines = []
+        with open(fname", "r") as f:
+            lines = f.readlines()
+        random_line_num = random.randrange(0, len(lines))
+        return lines[random_line_num].strip('\n\r')
+
+
+def tweetPhotos(photo_files, tweet_text="Photobooth photos!"):
+    """
+    Posts photos to twitter with the given tweet text
+
+    Paramters:
+    ----------
+    photo_files : list
+        list of full paths to the files to tweet
+    tweet_text  : str
+        text to tweet with photos
+
+    Returns:
+    --------
+    None
+
+    Notes:
+    ------
+    If you allow many photos per session (>3 photos/button press)
+    it is probably a good idea to only tweet a few to save time
+    and not make the Twitter API angry. Untested with high numbers.
+    """
     responses = []
     media_ids = []
-    tweet_text = "Test photobooth tweet with pictures!"
     for photo_file in photo_files:
         photo = open(photo_file)
         response = twitter.upload_media(media=photo)
@@ -107,22 +240,56 @@ def tweetPhotos(photo_files):
         media_ids.append(response['media_id'])
     twitter.update_status(status=tweet_text, media_ids=media_ids)
 
+
 def shutdownPi():
-    # shutdown our Raspberry Pi
+    """
+    Shutdown the system totally. Full halt.
+
+    Paramters:
+    ----------
+    None
+
+    Returns:
+    --------
+    None
+    """
     os.system("sudo shutdown -h now")
 
 
-def shutdownButtonPress(event):
-    sleep(3)
+def shutdownButtonPress(event, hold_time=3):
+    """
+    Event handler for the shutdown button. Makes sure that
+    the button is held before shutting down completely.
+
+    Parameters:
+    -----------
+    event : object
+        Event from GPIO
+    hold_time : int, float
+        Time (seconds) the button must be held for shutdown to
+        be activated. Helps prevent accidental shutdowns.
+    """
+    sleep(hold_time)
     if GPIO.input(shutdownbuttonPin) != GPIO.LOW:
         return
-    print "Shutdown button detected!"
+
     safeClose()
     shutdownPi()
 
 
 def safeClose():
-    print "Doing safe close-out"
+    """
+    Cleanly exits the program by turning off the lights, stopping
+    the camera, and cleaning up the resources.
+
+    Parameters:
+    -----------
+    None
+
+    Returns:
+    --------
+    None
+    """
     outputToggle(ledPin, False)
     outputToggle(auxlightPin, False)
     camera.stop_preview()
@@ -131,19 +298,20 @@ def safeClose():
 
 # Setup Parameters
 tweet_photos = True
+number_photos = 3
+tweet_text = "tweet_options.txt"
 photo_path = '/home/pi/photobooth_photos'
-# Initial Setup
+CONSUMER_KEY = "1fXopQ2aU1b4v9D6ufdJXmAZf"
+CONSUMER_SECRET = "16IfaC1dEEQhNKlERU7ggE2GU2id09zVVEsLfgexf7Qa8lPsHb"
+ACCESS_TOKEN = "145877180-AHXpU20eA5ofrARcA6FuWMpF1shHlR8iVhLrpFLK"
+ACCESS_TOKEN_SECRET = "jGWBAZ7pI2nnObmFwvFCvIzywPEe0riD1LRPoZ4PjOHfU"
 
+# Initial Setup
 if not os.path.exists(photo_path):
     os.makedirs(photo_path)
 
 if tweet_photos:
     import twython
-
-    CONSUMER_KEY = "1fXopQ2aU1b4v9D6ufdJXmAZf"
-    CONSUMER_SECRET = "16IfaC1dEEQhNKlERU7ggE2GU2id09zVVEsLfgexf7Qa8lPsHb"
-    ACCESS_TOKEN = "145877180-AHXpU20eA5ofrARcA6FuWMpF1shHlR8iVhLrpFLK"
-    ACCESS_TOKEN_SECRET = "jGWBAZ7pI2nnObmFwvFCvIzywPEe0riD1LRPoZ4PjOHfU"
 
     twitter = twython.Twython(
       CONSUMER_KEY,
@@ -154,18 +322,20 @@ if tweet_photos:
 
 pygame.init()
 
-# Constants
+# Pin configuration
 ledPin = 19  # GPIO of the indicator LED
 auxlightPin = 20  # GPIO of the AUX lighting output
 photobuttonPin = 17  # GPIO of the photo push button
 shutdownbuttonPin = 18  # GPIO of the shutdown push button
+
+# Camera Settings
 previewBrightness = 60  # Lighter than normal to offset the alpha distortion
 photoBrightness = 57  # Darker than preview since there is no alpha
 photoContrast = 0  # Default
 
+# pygame Settings
 size = width, height = 1280, 720
 black = 0, 0, 0
-
 screen = pygame.display.set_mode(size, pygame.FULLSCREEN)
 bigfont = pygame.font.Font(None, 800)
 smfont = pygame.font.Font(None, 600)
@@ -199,7 +369,8 @@ GPIO.add_event_detect(shutdownbuttonPin, GPIO.FALLING,
 
 outputToggle(ledPin, True)  # Turn on the camera "power" LED
 
-# Main loop... just waiting
+# Main loop. Waits for keypress events. Everything else is
+# an interrupt. Most of the time this just loops doing nothing.
 while 1:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
@@ -220,6 +391,7 @@ while 1:
                 camera.brightness = previewBrightness
                 print "New brightness (preview/photo): %d/%d" % (
                         photoBrightness, previewBrightness)
+
             if event.key == pygame.K_DOWN:
                 photoBrightness -= 1
                 previewBrightness -= 1
@@ -232,6 +404,7 @@ while 1:
                 photoContrast += 1
                 camera.contrast = photoContrast
                 print "New contrast: %d" % (photoContrast)
+
             if event.key == pygame.K_LEFT:
                 photoContrast -= 1
                 camera.contrast = photoContrast
