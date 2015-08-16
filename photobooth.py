@@ -118,6 +118,9 @@ def takePhoto():
     # Grab the capture
     time_stamp = strftime("%Y_%m_%dT%H_%M_%S", gmtime())
     path = "/home/pi/photobooth_photos/%s.jpg" % time_stamp
+    if play_shutter_sound:
+        shutter_sound.play()
+
     camera.capture(path)
 
     # Go back to preview brightness
@@ -307,6 +310,7 @@ def safeClose():
 tweet_photos = True
 number_photos = 3
 tweet_text = "tweet_options.txt"
+play_shutter_sound = True
 photo_path = '/home/pi/photobooth_photos'
 CONSUMER_KEY = "1fXopQ2aU1b4v9D6ufdJXmAZf"
 CONSUMER_SECRET = "16IfaC1dEEQhNKlERU7ggE2GU2id09zVVEsLfgexf7Qa8lPsHb"
@@ -328,6 +332,8 @@ if tweet_photos:
     )
 
 pygame.init()
+pygame.mixer.init()
+shutter_sound = pygame.mixer.Sound("shutter_click.wav")
 
 # Pin configuration
 ledPin = 19  # GPIO of the indicator LED
