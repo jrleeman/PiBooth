@@ -307,15 +307,16 @@ def safeClose():
     GPIO.cleanup()
 
 # Setup Parameters
-tweet_photos = True
-number_photos = 3
-tweet_text = "tweet_options.txt"
-play_shutter_sound = True
-photo_path = '/home/pi/photobooth_photos'
-CONSUMER_KEY = "YOUR_KEY_HERE"
-CONSUMER_SECRET = "YOUR_KEY_HERE"
-ACCESS_TOKEN = "YOUR_KEY_HERE"
-ACCESS_TOKEN_SECRET = "YOUR_KEY_HERE"
+# Only change things here unless you want to dig into the program
+tweet_photos = True  # Turn on/off photo tweeting
+number_photos = 3  # Number of pictures taken after each activation
+tweet_text = "tweet_options.txt"  # Default text or file of tweets
+play_shutter_sound = True  # Turn on/off shutter sound effects
+photo_path = '/home/pi/photobooth_photos'  # Where photos will be stored
+CONSUMER_KEY = "YOUR_KEY_HERE"  # Keys from twitter
+CONSUMER_SECRET = "YOUR_KEY_HERE"  # Keys from twitter
+ACCESS_TOKEN = "YOUR_KEY_HERE"  # Keys from twitter
+ACCESS_TOKEN_SECRET = "YOUR_KEY_HERE"  # Keys from twitter
 
 # Initial Setup
 if not os.path.exists(photo_path):
