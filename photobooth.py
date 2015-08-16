@@ -204,7 +204,7 @@ def getRandomTweet(fname):
             text of random tweet from file
         """
         lines = []
-        with open(fname", "r") as f:
+        with open(fname, "r") as f:
             lines = f.readlines()
         random_line_num = random.randrange(0, len(lines))
         return lines[random_line_num].strip('\n\r')
