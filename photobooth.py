@@ -333,7 +333,7 @@ if tweet_photos:
 
 pygame.init()
 pygame.mixer.init()
-shutter_sound = pygame.mixer.Sound("shutter_click.wav")
+shutter_sound = pygame.mixer.Sound("shutter_sound.wav")
 
 # Pin configuration
 ledPin = 19  # GPIO of the indicator LED
