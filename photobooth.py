@@ -185,10 +185,14 @@ def photoButtonPress(event):
         print tweet_text
         print ".txt" in tweet_text
         if ".txt" in tweet_text:
-            text = getRandomTweet(tweet_text)
+            try:
+                text = getRandomTweet(tweet_text)
+            except:
+                print "Error getting random tweet!"
+                text = "Photo booth photos!"
         else:
             text = tweet_text
-        tweetPhotos(photo_names, tweet_text=tweet_text)
+        tweetPhotos(photo_names, tweet_text=text)
 
 
 def getRandomTweet(fname):
