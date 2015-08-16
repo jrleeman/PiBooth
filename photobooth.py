@@ -182,6 +182,8 @@ def photoButtonPress(event):
 
     # Tweet the photos
     if tweet_photos:
+        print tweet_text
+        print ".txt" in tweet_text
         if ".txt" in tweet_text:
             text = getRandomTweet(tweet_text)
         else:
