@@ -312,10 +312,10 @@ number_photos = 3
 tweet_text = "tweet_options.txt"
 play_shutter_sound = True
 photo_path = '/home/pi/photobooth_photos'
-CONSUMER_KEY = "1fXopQ2aU1b4v9D6ufdJXmAZf"
-CONSUMER_SECRET = "16IfaC1dEEQhNKlERU7ggE2GU2id09zVVEsLfgexf7Qa8lPsHb"
-ACCESS_TOKEN = "145877180-AHXpU20eA5ofrARcA6FuWMpF1shHlR8iVhLrpFLK"
-ACCESS_TOKEN_SECRET = "jGWBAZ7pI2nnObmFwvFCvIzywPEe0riD1LRPoZ4PjOHfU"
+CONSUMER_KEY = "YOUR_KEY_HERE"
+CONSUMER_SECRET = "YOUR_KEY_HERE"
+ACCESS_TOKEN = "YOUR_KEY_HERE"
+ACCESS_TOKEN_SECRET = "YOUR_KEY_HERE"
 
 # Initial Setup
 if not os.path.exists(photo_path):
