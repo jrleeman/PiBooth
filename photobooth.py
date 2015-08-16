@@ -1,6 +1,7 @@
 import sys
 import pygame
 import picamera
+import random
 import RPi.GPIO as GPIO
 from time import sleep, strftime, gmtime
 import os
