@@ -332,9 +332,15 @@ if tweet_photos:
       ACCESS_TOKEN_SECRET
     )
 
+# Setup sound. Note that if the full path to the audio file is not
+# specified, it will not play when auto-startup happens, but will
+# when manually started from the correct directory. Use the full path
+# for it to work as expected. Could always use os.getcwd() to construct
+# the path, but here it's really very simple.
+
 pygame.init()
 pygame.mixer.init()
-shutter_sound = pygame.mixer.Sound("shutter_sound.wav")
+shutter_sound = pygame.mixer.Sound("/home/pi/PiBooth/shutter_sound.wav")
 
 # Pin configuration
 ledPin = 19  # GPIO of the indicator LED
