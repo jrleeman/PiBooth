@@ -121,7 +121,14 @@ def takePhoto():
     if play_shutter_sound:
         shutter_sound.play()
 
+    # Unflip the photo so it is correct when taken
+    camera.hflip = False
+
+    # Take the photo
     camera.capture(path)
+
+    # Go back to flipped preview
+    camera.hflip = True
 
     # Go back to preview brightness
     camera.brightness = previewBrightness
