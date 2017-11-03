@@ -370,7 +370,7 @@ tinyfont = pygame.font.Font(None, 300)
 
 # Setup camera
 camera = picamera.PiCamera()
-camera.resulotion = (2592, 1944)  # 1280,720 also works for some setups
+camera.resolution = (2592, 1944)  # 1280,720 also works for some setups
 camera.framerate = 10  # slower is necessary for high-resolution
 camera.brightness = previewBrightness  # Turned up so the black isn't too dark
 camera.preview_alpha = 210  # Set transparency so we can see the countdown
